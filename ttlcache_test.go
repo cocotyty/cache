@@ -1,35 +1,41 @@
 package cache
 
 import (
-	"fmt"
-	"runtime"
-	"sync"
 	"testing"
 	"time"
+	"strconv"
+	"github.com/patrickmn/go-cache"
 )
 
-var wg = sync.WaitGroup{}
-
-func fuck() {
-	tc := NewCache()
-	tc.Set("sb", "sb", time.Second)
-	time.Sleep(10 * time.Second)
-	fmt.Println("finish")
-	wg.Done()
-}
-func TestTTLCache_Set(t *testing.T) {
-	wg.Add(1)
-	go fuck()
-	wg.Wait()
-	runtime.GC()
-	time.Sleep(3 * time.Second)
-	fmt.Println("ok")
-}
-func BenchmarkNewTTLCache(b *testing.B) {
-	ttlcache := NewCache()
+func BenchmarkRealTTLCache_Set(b *testing.B) {
+	ttlcache := NewCache(256)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			ttlcache.Set(string(time.Now().UnixNano()), "sb", 10*time.Millisecond)
+			ttlcache.Set(strconv.Itoa(int(time.Now().UnixNano())), "sometext", 10*time.Millisecond)
 		}
 	})
+}
+func BenchmarkPatrickmnGoCache(b *testing.B) {
+	ttlcache := cache.New(time.Second,100*time.Millisecond)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			ttlcache.Set(strconv.Itoa(int(time.Now().UnixNano())), "sometext", 10*time.Millisecond)
+		}
+	})
+}
+func TestNewCache(t *testing.T) {
+	c:=NewCache(32)
+	c.Set("ABC","1",100*time.Millisecond)
+	if v,ok:=c.Get("ABC");ok{
+		if v != "1"{
+			t.Fatal("not equal!")
+		}
+	}else{
+		t.Fatal("cache miss")
+	}
+	time.Sleep(100*time.Millisecond)
+	if _,ok:=c.Get("ABC");ok{
+		t.Fatal("cache should miss")
+	}
+	t.Log("success")
 }

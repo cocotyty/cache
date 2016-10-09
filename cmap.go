@@ -14,10 +14,12 @@ func NewCMap(size int) *CMap {
 	return cmap
 }
 
+// simple concurrent map ,really simple,but works
 type CMap struct {
-	CMapEntries []*CMapEntry
 	Size        uint32
+	CMapEntries []*CMapEntry
 }
+
 type CacheValue struct {
 	Exp   int64
 	Value interface{}
